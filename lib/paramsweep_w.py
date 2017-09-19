@@ -1,8 +1,9 @@
 import numpy as np
 from lib.lif import LIF, ParamsLIF
+from lib.causal import causaleffect
 
-lif = LIF()
-params_orig = ParamsLIF()
+params = ParamsLIF()
+lif = LIF(params)
 
 #Simulate for a range of $W$ values.
 N = 10
@@ -13,7 +14,7 @@ beta_rd_w = np.zeros((N, N, nsims, params.n))
 beta_fd_w = np.zeros((N, N, nsims, params.n))
 beta_bp_w = np.zeros((N, N, nsims, params.n))
 
-lif.setup(params_orig)
+lif.setup(params)
 p = 0.03
 
 for i,w0 in enumerate(wvals):
