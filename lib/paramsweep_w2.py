@@ -8,16 +8,17 @@ lif = LIF(params)
 #Simulate for a range of $W$ values.
 N = 20
 nsims = 500
+wmax = 20
 n = params.n 
 
 #Play with different c values
-c = 0.99
-#c = 0.1
+#c = 0.99
+c = 0.1
 
 params.c = c
 lif.setup(params)
 
-wvals = np.linspace(1, 10, N)
+wvals = np.linspace(1, wmax, N)
 vs = np.zeros((N, N, nsims, n, lif.T), dtype=np.float16)
 hs = np.zeros((N, N, nsims, n, lif.T), dtype=np.bool)
 
