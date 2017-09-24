@@ -13,7 +13,7 @@ n = params.n
 
 #Play with different c values
 #c = 0.99
-c = 0.1
+c = 0.5
 
 params.c = c
 lif.setup(params)
