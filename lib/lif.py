@@ -26,7 +26,7 @@ class ParamsLSM(ParamsLIF):
 		self.I0 = I0
 		super(ParamsLSM, self).__init__(**kwargs)
 
-class LIF:
+class LIF(object):
 	def __init__(self, params, t = 10):
 		self.setup(params, t)
 
@@ -147,13 +147,14 @@ class LSM(LIF):
 
 		self.I0 = np.zeros((q,1))
 		self.I0[:,0] = np.maximum(rand.randn(q)*sigma_u+mu_u, 0)
+		self.st = np.zeros((self.params.q,1))
 
 	def simulate(self, x):
 		s = np.zeros((self.params.q,self.T))
 		vt = np.zeros((self.params.q,1))
 		rt = np.zeros((self.params.q,1))
-		st = np.zeros((self.params.q,1))
 		sp = np.zeros((self.params.q,1))
+		st = self.st
 
 		#print(self.Tr)
 
@@ -176,4 +177,11 @@ class LSM(LIF):
 			#Save the output
 			s[:,i] = st[:,0]
 
+		self.st = st
+
+		return s
+
+class LSM_const(LSM):
+	def simulate(self, x):
+		s = np.ones((self.params.q,self.T))
 		return s
