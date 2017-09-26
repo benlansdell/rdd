@@ -36,4 +36,5 @@ outfile = './sweeps/param_w_N_%d_nsims_%d_c_%f_default_simulations.npz'%(N, nsim
 np.savez(outfile, vs = vs, hs = hs, params = params, wvals = wvals\
 	, nsims = nsims)
 
-
+np.savez(outfile, vs = vs, hs = hs, params = params, wvals = wvals\
+	, nsims = nsims)
