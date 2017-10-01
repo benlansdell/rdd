@@ -1,19 +1,19 @@
 import numpy as np
 from lib.lif import LIF, ParamsLIF, LSM, ParamsLSM, LSM_const
 
-q = 100             # Number of LSM neurons
-t = 3               # Time for each epoch
-Wn = 20             # Number of W values we sweep over
-wmax = 20           # Max W value of sweep
-N = 20              # Number of epochs
 n = 2               # Number of neurons
+q = 100             # Number of LSM neurons
 x = 2               # Constant input
-eta = .5            # Learning rate
-mu = 1              # Threshold
-p = 0.05            # Window size
 alpha1 = 10         # Cost function params
 alpha2 = 30         # Cost function params
 tau_s = 0.020       # Time scale for output filter
+mu = 1              # Threshold
+p = 0.05            # Window size
+t = 1               # Time for each epoch
+N = 20              # Number of epochs
+Wn = 20             # Number of W values we sweep over
+wmax = 20           # Max W value of sweep
+eta = .5            # Learning rate
 
 # Filename for results
 fn_out = './sweeps/learningbeta_fixedx_sweepw.npz'
@@ -34,6 +34,7 @@ beta_rd_true = np.zeros((Wn, Wn, n, N))
 beta_fd_true = np.zeros((Wn, Wn, n, N))
 
 for i, w0 in enumerate(wvals):
+    print("W0=%d"%w0)
     for j, w1 in enumerate(wvals):
         #init weights
         lif.W = np.array([w0, w1])
@@ -54,7 +55,6 @@ for i, w0 in enumerate(wvals):
         count = 0
 
         for idx in range(N):
-            print("N=%d"%idx)
             #Simulate LSM
             s_lsm = lsm.simulate(x)
             #Simulate LIF
