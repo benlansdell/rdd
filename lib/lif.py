@@ -18,7 +18,7 @@ class ParamsLIF(object):
 
 class ParamsLSM(ParamsLIF):
 
-	def __init__(self, t = 1, q = 100, p = 1, tau_s = .04, I0 = 4, **kwargs):
+	def __init__(self, t = 1, q = 100, p = 1, tau_s = .04, I0 = 20, **kwargs):
 		self.t = t
 		self.q = q
 		self.p = p
