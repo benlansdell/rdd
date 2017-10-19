@@ -13,7 +13,7 @@ wmin = 1            # Min w value of sweep
 eta = .5            # Learning rate
 c = 0.75            # Noise correlation coefficient
 x_mu = 3            # Mean input level
-x_sigma = 1         # Spread of input x distribution
+x_sigma = 2         # Spread of input x distribution
 
 # Filename for results
 fn_out = './sweeps/learningcostfunc_variablex_sweepw.npz'

@@ -10,13 +10,18 @@ tau_s = 0.020       # Time scale for output filter
 mu = 1              # Threshold
 p = 0.05            # Window size
 t = 1               # Time for each epoch
-N = 40              # Number of epochs
+N = 100             # Number of epochs
 Wn = 20             # Number of W values we sweep over
 wmax = 20           # Max W value of sweep
 eta = 1             # Learning rate
+#perturb_rate = 0.01 # Proportion of points that are perturbations
+#                    # 1% = 10 Hz. Only half of these are spikes, so the injected noise rate is 5Hz
+
+mvals = [0.0025, 0.005, 0.01, 0.015]
+M = len(mvals)
 
 # Filename for results
-fn_out = './sweeps/learningbeta_fixedx_sweepw_banana.npz'
+fn_out = './sweeps/learningbeta_fixedx_sweepw_banana_perturbation.npz'
 
 #Cost function params
 B1 = 2
@@ -39,6 +44,7 @@ wvals = np.linspace(1, wmax, Wn)
 beta_rd = np.zeros((Wn, Wn, n, N))
 beta_rd_true = np.zeros((Wn, Wn, n, N))
 beta_fd_true = np.zeros((Wn, Wn, n, N))
+beta_sp = np.zeros((Wn, Wn, n, N, M))
 
 for i, w0 in enumerate(wvals):
     print("W0=%d"%w0)
@@ -46,6 +52,7 @@ for i, w0 in enumerate(wvals):
         #init weights
         lif.W = np.array([w0, w1])
         V = np.ones((n,q))
+        U = np.ones((n,q,M))
 
         #Also collect the c_abv, c_below for p = 0.03, p = 1, accumulated over each epoch, and estimate 
         #the 'true' beta as we go
@@ -69,13 +76,30 @@ for i, w0 in enumerate(wvals):
             s1 = np.convolve(h[0,:], exp_filter)[0:h.shape[1]]
             s2 = np.convolve(h[1,:], exp_filter)[0:h.shape[1]]
         
-            dVabv = np.zeros(V.shape)
-            dVblo = np.zeros(V.shape)
-            
             abvthr = np.zeros(n)
             blothr = np.zeros(n)
-            
+
             cost = (B1*s1 - x)**2 + (z + B2*s2 - B2*(2*B1*s1 - y)**2)**2
+
+            ptb = 2*(np.random.rand(*h.shape) < 0.5)-1
+            #Create a perturbed set of trains
+            for idx2, perturb_rate in enumerate(mvals):
+                dU = np.zeros(U.shape[0:2])
+                qtb = np.random.rand(*h.shape) < perturb_rate
+                h_perturb = h.copy()
+                h_perturb[qtb == True] = ptb[qtb == True]
+                s1_perturb = np.convolve(h_perturb[0,:], exp_filter)[0:h.shape[1]]
+                s2_perturb = np.convolve(h_perturb[1,:], exp_filter)[0:h.shape[1]]
+                cost_perturbed = (B1*s1_perturb - x)**2 + (z + B2*s2_perturb - B2*(2*B1*s1_perturb - y)**2)**2
+                for t in range(v.shape[1]):
+                    for k in range(n):
+                        #If this timebin is a perturbation time then update U
+                        if qtb[k,t]:
+                            dU[k,:] = (np.dot(U[k,:,idx2], s_lsm[:,t])-ptb[k,t]*cost_perturbed[t])*s_lsm[:,t]
+                            U[k,:,idx2] = U[k,:,idx2] - eta*dU[k,:]
+                s_lsm = lsm.simulate(x_input)
+                beta_sp[i,j,:,idx,idx2] = np.mean(np.dot(U[:,:,idx2], s_lsm[:,-100:]),1)
+
             #cost = (alpha1*s1 + alpha2*s2 - x**2)**2
             dV = np.zeros(V.shape)
             bt = [False, False]
@@ -124,4 +148,5 @@ for i, w0 in enumerate(wvals):
             beta_rd[i,j,:,idx] = np.mean(np.dot(V, s_lsm[:,-100:]),1)
 
 #Save the results
-np.savez(fn_out, wvals = wvals, beta_rd = beta_rd, beta_rd_true = beta_rd_true, beta_fd_true = beta_fd_true)
+np.savez(fn_out, wvals = wvals, beta_rd = beta_rd, beta_rd_true = beta_rd_true, beta_fd_true = beta_fd_true,\
+ beta_sp = beta_sp)

@@ -97,6 +97,9 @@ class ESN():
         # rescale them to reach the requested spectral radius:
         self.W = W * (self.spectral_radius / radius)
 
+        self.W_out = self.random_state_.rand(
+            self.n_outputs, self.n_reservoir + self.n_inputs) * 2 - 1
+
         # random input weights:
         self.W_in = self.random_state_.rand(
             self.n_reservoir, self.n_inputs) * 2 - 1
@@ -227,7 +230,7 @@ class ESN():
             inputs = np.reshape(inputs, (len(inputs), -1))
         n_samples = inputs.shape[0]
 
-        if continuation:
+        if continuation and hasattr(self, 'laststate'):
             laststate = self.laststate
             lastinput = self.lastinput
             lastoutput = self.lastoutput
