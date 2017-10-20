@@ -43,7 +43,7 @@ class LIF(object):
 		self.Tr = np.ceil(self.params.tr/self.params.dt).astype(int)
 		self.times = np.linspace(0,self.t,self.T)
 		
-		self.x = 0
+		self.x = 2
 		self.W = np.array([5, 5])
 		self.V = np.array([8, -4])
 		
