@@ -43,14 +43,23 @@ class LIF(object):
 		self.Tr = np.ceil(self.params.tr/self.params.dt).astype(int)
 		self.times = np.linspace(0,self.t,self.T)
 		
-		self.x = 2
+		self.x = 0
 		self.W = np.array([5, 5])
 		self.V = np.array([8, -4])
+
+		self.keepstate = True
+		self.vt = np.zeros(self.params.n)
+
 		
 	def simulate(self):
 		v = np.zeros((self.params.n,self.T))
 		h = np.zeros((self.params.n,self.T))
-		vt = np.zeros(self.params.n)
+
+		if not self.keepstate:
+			self.vt = np.zeros(self.params.n)
+
+		vt = self.vt
+
 		r = np.zeros(self.params.n)
 
 		#Generate new noise with each sim
@@ -82,6 +91,8 @@ class LIF(object):
 		beta1 = self.V[0]**2 + 2*self.V[0]*self.V[1]*np.mean(h[1,:])-2*self.V[0]*self.x**2
 		beta2 = self.V[1]**2 + 2*self.V[0]*self.V[1]*np.mean(h[0,:])-2*self.V[1]*self.x**2
 		betas = [beta1, beta2]
+
+		self.vt = vt
 
 		return (v, h, C, betas)
 
