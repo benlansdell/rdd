@@ -238,6 +238,9 @@ class LIF_3layer(object):
 		self.exp_filter = exp_filter/np.sum(exp_filter)
 		self.ds = exp_filter[0]
 
+		self.vth = np.zeros(self.params.n)
+		self.vto = np.zeros(self.no)
+
 	def simulate(self, x):
 		vh = np.zeros((self.params.n,self.T))
 		hh = np.zeros((self.params.n,self.T))
@@ -262,7 +265,7 @@ class LIF_3layer(object):
 			ip = np.random.rand(self.T) < rate*self.params.dt
 			sx[i,:] = np.convolve(ip, self.exp_filter)[0:self.T]
 
-		vt = np.zeros(self.params.n)
+		vt = self.vth
 		dv = np.zeros(self.params.n)
 		r = np.zeros(self.params.n)
 		#Simulate t seconds for the hidden layer
@@ -281,6 +284,10 @@ class LIF_3layer(object):
 			vt[vt<self.params.reset] = self.params.reset
 			#Decrement the refractory counters
 			r[r>0] -= 1
+
+		self.vth = vt
+
+		vt = self.vto
 
 		#Simulate t seconds output neuron
 		for i in range(self.params.n):
@@ -304,5 +311,7 @@ class LIF_3layer(object):
 			vt[vt<self.params.reset] = self.params.reset
 			#Decrement the refractory counters
 			r[r>0] -= 1
+
+		self.vto = vt
 
 		return vh, hh, vo, ho, so, sx
