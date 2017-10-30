@@ -205,7 +205,7 @@ class LSM_const(LSM):
 		return s
 
 class LIF_3layer(object):
-	def __init__(self, params, t = 1, nx = 2, no = 1, tau_s = 0.020, onrate = 200, offrate = 50, alpha = 200, spectral_radius = 0.95):
+	def __init__(self, params, t = 1, nx = 2, no = 1, tau_s = 0.020, onrate = 200, offrate = 100, alpha = 30, spectral_radius = 0.95):
 		self.tau_s = tau_s
 		self.onrate = onrate
 		self.offrate = offrate
@@ -230,10 +230,10 @@ class LIF_3layer(object):
 		self.times = np.linspace(0,self.t,self.T)
 		
 		self.x = np.ones((self.nx,1))
-		self.W = self.alpha*np.random.rand(self.params.n, self.nx)#-self.alpha/2.
-		self.U = self.alpha*np.random.rand(self.no, self.params.n)#-self.alpha/2.
+		self.W = self.alpha*np.random.rand(self.params.n, self.nx)-self.alpha/3.
+		self.U = self.alpha*np.random.rand(self.no, self.params.n)-self.alpha/3.
 
-		t_filter = np.linspace(0, 0.15, 150)
+		t_filter = np.linspace(0, 1, 2000)
 		exp_filter = np.exp(-t_filter/self.tau_s)
 		self.exp_filter = exp_filter/np.sum(exp_filter)
 		self.ds = exp_filter[0]
@@ -250,7 +250,7 @@ class LIF_3layer(object):
 		so = np.zeros((self.params.n, self.T))
 
 		#Generate new noise with each sim
-		xi = self.params.sigma*rand.randn(self.params.n+1,self.T)/np.sqrt(self.params.tau)
+		xi = self.params.sigma*rand.randn(self.nx+1,self.T)/np.sqrt(self.params.tau)
 		#Common noise
 		xi[0,:] = xi[0,:]*np.sqrt(self.params.c)
 		#Indep noise
@@ -270,7 +270,7 @@ class LIF_3layer(object):
 		r = np.zeros(self.params.n)
 		#Simulate t seconds for the hidden layer
 		for t in range(self.T):
-			dv = -vt/self.params.tau + np.squeeze(np.dot(self.W, sx[:,t])) + xi[0,t] + xi[1:,t]
+			dv = -vt/self.params.tau + np.squeeze(np.dot(self.W, sx[:,t]+xi[0,t] + xi[1:,t]))
 			vt = vt + self.params.dt*dv
 			#Find neurons that spike
 			s = vt>self.params.mu
@@ -298,7 +298,7 @@ class LIF_3layer(object):
 		r = np.zeros(self.no)
 		for t in range(self.T):
 			#Determine the output neuron's output
-			dv = -vt/self.params.tau + np.squeeze(np.dot(self.U, so[:,t])) + xo[:,t]
+			dv = -vt/self.params.tau + np.squeeze(np.dot(self.U, so[:,t]+xo[:,t]))
 			vt = vt + self.params.dt*dv
 			#Find neurons that spike
 			s = vt>self.params.mu
