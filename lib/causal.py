@@ -3,6 +3,18 @@ from sklearn import linear_model
 import copy
 import numpy.random as random
 
+#	#Load filter
+#	a = np.load(fn_filter)
+#	filter = a['filter']
+
+#def causaleffect_optimalized(v, Cost, p, params, filter):
+#	mu = params.mu;
+#	mce = np.zeros(v.shape[0])
+#	for j in range(v.shape[0]):
+#		filtered = ?
+#		mce[j] = np.mean(np.multiply(Cost, filtered))
+#	return mce
+
 def causaleffect(v, Cost, p, params):
 	mu = params.mu;
 	mce = np.zeros(v.shape[0])
