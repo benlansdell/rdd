@@ -49,16 +49,27 @@ class LIF(object):
 
 		self.keepstate = True
 		self.vt = np.zeros(self.params.n)
-
+		self.ut = np.zeros(self.params.n)
 		
-	def simulate(self):
+	def simulate(self, deltaT = None):
+
+		#if deltaT is provided then in blocks of deltaT we compute the counterfactual trace... the evoluation without spiking.
+
 		v = np.zeros((self.params.n,self.T))
+
+		if deltaT is not None:
+			u = np.zeros((self.params.n,self.T))
+		else:
+			u = None
+
 		h = np.zeros((self.params.n,self.T))
 
 		if not self.keepstate:
 			self.vt = np.zeros(self.params.n)
+			self.ut = np.zeros(self.params.n)
 
 		vt = self.vt
+		ut = self.ut
 
 		r = np.zeros(self.params.n)
 
@@ -69,18 +80,30 @@ class LIF(object):
 
 		#Simulate t seconds
 		for i in range(self.T):
+
+			#ut is not reset by spiking. ut is set to vt at the start of each block of deltaT
+			if deltaT is not None:
+				if i%deltaT == 0:
+					ut = vt
+
 			dv = -vt/self.params.tau + np.multiply(self.W,(self.x + xi[0,i] + xi[1:,i]))
 			vt = vt + self.params.dt*dv
+			ut = ut + self.params.dt*dv
 			#Find neurons that spike
 			s = vt>self.params.mu
 			#Save the voltages and spikes
 			h[:,i] = s.astype(int)
 			v[:,i] = vt
+
+			if deltaT is not None:
+				u[:,i] = ut
+
 			#Make spiking neurons refractory
 			r[s] = self.Tr
 			#Set the refractory neurons to v_reset
 			vt[r>0] = self.params.reset
 			vt[vt<self.params.reset] = self.params.reset
+			ut[ut<self.params.reset] = self.params.reset
 			#Decrement the refractory counters
 			r[r>0] -= 1
 
@@ -94,7 +117,8 @@ class LIF(object):
 
 		self.vt = vt
 
-		return (v, h, C, betas)
+		return (v, h, C, betas, u)
+
 
 class LSM(LIF):
 	"""A class for a liquid state machine

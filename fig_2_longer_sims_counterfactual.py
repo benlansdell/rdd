@@ -8,7 +8,7 @@ import seaborn as sns
 from lib.lif import LIF, ParamsLIF
 from lib.causal import causaleffect_maxv, causaleffect_maxv_linear, causaleffect_maxv_sp
 
-fn_out = './sweeps/fig2_longer_sims.npz'
+fn_out = './sweeps/fig2_longer_sims_counterfactual.npz'
 
 nsims = 1000
 cvals = np.array([0.01, 0.25, 0.5, 0.75, 0.99])
@@ -60,18 +60,18 @@ for i,c in enumerate(cvals):
     params.c = c
     lif.setup(params)
     for j in range(nsims):
-        (v, h, _, _) = lif.simulate()
+        (v, h, _, _, u) = lif.simulate(DeltaT)
         s1 = np.convolve(h[0,:], exp_filter)[0:h.shape[1]]
         s2 = np.convolve(h[1,:], exp_filter)[0:h.shape[1]]
         cost_s = cost(s1, s2)
         for k,p in enumerate(pvals):
             #print("p = %f"%p)
-            beta_rd_c[i,j,k,:] = causaleffect_maxv(v, cost_s, DeltaT, p, params)
-            beta_rd_c_linear[i,j,k,:] = causaleffect_maxv_linear(v, cost_s, DeltaT, p, params)
-        beta_fd_c[i,j,:] = causaleffect_maxv(v, cost_s, DeltaT, 1, params)
-        beta_fd_c_linear[i,j,:] = causaleffect_maxv_linear(v, cost_s, DeltaT, 1, params)
+            beta_rd_c[i,j,k,:] = causaleffect_maxv(u, cost_s, DeltaT, p, params)
+            beta_rd_c_linear[i,j,k,:] = causaleffect_maxv_linear(u, cost_s, DeltaT, p, params)
+        beta_fd_c[i,j,:] = causaleffect_maxv(u, cost_s, DeltaT, 1, params)
+        beta_fd_c_linear[i,j,:] = causaleffect_maxv_linear(u, cost_s, DeltaT, 1, params)
         #Compute the SP cost
-        beta_sp_c[i,:] = causaleffect_maxv_sp(v, h, cost, DeltaT, params, exp_filter)        
+        beta_sp_c[i,:] = causaleffect_maxv_sp(u, h, cost, DeltaT, params, exp_filter)        
 
 m_beta_rd_c = np.mean(beta_rd_c, 1)
 se_beta_rd_c = np.std(beta_rd_c, 1)
