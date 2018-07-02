@@ -4,5 +4,5 @@ Learning aims at causing better performance, and the typical gradient descent le
 
 `python` code and jupyter notebooks to reproduce figure from our biorxiv preprint ([here](https://www.biorxiv.org/content/early/2018/01/24/253351.article-info)).
 
-This figure captures the idea of RDD applied to neural networks. See the text for more details.
+See the text for more details.
 ![alt text](fig1.png "Figure 1")
