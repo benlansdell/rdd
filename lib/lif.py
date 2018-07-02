@@ -141,10 +141,12 @@ class LIF(object):
                     ut = vt
 
             dv = -vt/self.params.tau + np.multiply(self.W,(self.x + xi[0,i] + xi[1:,i]))
+            #print vt.shape
             vt = vt + self.params.dt*dv
             ut = ut + self.params.dt*dv
             #Find neurons that spike
             s = vt>self.params.mu
+            #print vt.shape
             #Save the voltages and spikes
             h[:,i] = s.astype(int)
             v[:,i] = vt
