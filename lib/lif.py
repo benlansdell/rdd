@@ -21,6 +21,12 @@ def convolve_online(s, h, kernel, t_offset):
             #print st,en,ln,idx,t_offset
             s[st:en] += kernel[0:ln]
 
+def convolve_online_v2(s, sp_idx, time_idx, kernel, t_offset):
+    st = t_offset + time_idx
+    en = min(s.shape[1], st + kernel.shape[0])
+    ln = en-st
+    s[sp_idx, st:en] += kernel[0:ln]
+
 def firingrate_LIF(params, W, S):
     #Computes the firing rate as a function of weights W and mean inputs S
     tau = params.tau
@@ -50,6 +56,23 @@ class ParamsLIF(object):
         self.tau = tau          #Time constant
         self.c = c              #Correlation between noise inputs
         self.sigma = sigma      #Std dev of noise process
+
+class ParamsLIF_Recurrent(object):
+    def __init__(self, kernel, dt = 0.001, tr = 0.003, mu = 1, reset = 0, xsigma = 1, n1 = 2, n2 = 10, tau = 1,\
+        c = 0.99, sigma = 20):
+
+        self.dt = dt            #Step size
+        self.tr = tr            #Refractory period
+        self.mu = mu            #Threshold
+        self.reset = reset      #Reset potential
+        self.xsigma = xsigma    #Std dev of input x
+        self.n1 = n1            #Number of neurons in first layer
+        self.n2 = n2            #Number of neurons in second layer
+        self.n = n1 + n2        #Total number of neurons
+        self.tau = tau          #Time constant
+        self.c = c              #Correlation between noise inputs
+        self.sigma = sigma      #Std dev of noise process
+        self.kernel = kernel    #Kernel to apply to spike trains
 
 class ParamsLSM(ParamsLIF):
 
@@ -139,6 +162,9 @@ class LIF(object):
             if deltaT is not None:
                 if i%deltaT == 0:
                     ut = vt
+
+            #print self.W.shape
+            #print xi.shape
 
             dv = -vt/self.params.tau + np.multiply(self.W,(self.x + xi[0,i] + xi[1:,i]))
             #print vt.shape
@@ -499,3 +525,116 @@ class LIF_3layer(object):
         self.Toffset += self.T
 
         return vh, hh, vo, ho, uh, uo
+
+###################################################################
+###################################################################
+
+class LIF_Recurrent(object):
+
+    def __init__(self, params, t = 10, t_total = None):
+        self.setup(params, t, t_total)
+
+    def setup(self, params = None, t = None, t_total = None):
+        if params is not None:
+            self.params = params
+        if t is not None:
+            self.t = t
+        if not hasattr(self, 't_total'):
+            self.t_total = None
+        if t_total is not None:
+            self.t_total = t_total
+
+        #Initialize voltage and spike train variables
+        #Simulation time in timestep units
+        self.T =  np.ceil(self.t/self.params.dt).astype(int)
+        #Refractory period in timestep units
+        self.Tr = np.ceil(self.params.tr/self.params.dt).astype(int)
+        self.times = np.linspace(0,self.t,self.T)
+        
+        #Input signal
+        self.x = 0
+        #Input to each neuron in first layer weights
+        self.W1 = 25*np.ones(self.params.n1)
+        self.W2 = 2*np.ones(self.params.n1)
+
+        #The feedforward/recurrent connections
+        self.U = np.zeros((self.params.n, self.params.n))        
+        self.sh = np.zeros((self.params.n, self.T))
+        #self.U[0:self.params.n1, self.params.n1:] = 500*np.random.randn(self.params.n1, self.params.n2)
+        self.U[self.params.n1:, 0:self.params.n1] = 200*np.random.randn(self.params.n2, self.params.n1)+100
+
+        self.keepstate = True
+        self.vt = np.zeros(self.params.n)
+        self.ut = np.zeros(self.params.n)
+        
+        if t_total is not None:
+            self.T_total = np.ceil(self.t_total/self.params.dt).astype(int)
+            #Precompute noise
+            self.xi = self.params.sigma*rand.randn(self.params.n1+1,self.T_total+self.T)/np.sqrt(self.params.tau)
+            self.xi_l2 = self.params.sigma*rand.randn(self.params.n2,self.T_total+self.T)/np.sqrt(self.params.tau)
+            self.xi[0,:] = self.xi[0,:]*np.sqrt(self.params.c)
+            self.xi[1:,:] = self.xi[1:,:]*np.sqrt(1-self.params.c)
+            self.xi_perturb = rand.randn(self.params.n,self.T_total+self.T)/np.sqrt(self.params.tau)
+        self.count = 0
+
+    def simulate(self, deltaT = None):
+        #if deltaT is provided then in blocks of deltaT we compute the counterfactual trace... the evolution without spiking.
+        v = np.zeros((self.params.n,self.T))
+        if deltaT is not None:
+            u = np.zeros((self.params.n,self.T))
+        else:
+            u = None
+        h = np.zeros((self.params.n,self.T))
+        if not self.keepstate:
+            self.vt = np.zeros(self.params.n)
+            self.ut = np.zeros(self.params.n)
+            self.sh = np.zeros((self.params.n, self.T))
+        vt = self.vt
+        ut = self.ut
+        sh = self.sh
+        r = np.zeros(self.params.n)
+        #Generate new noise with each sim
+        if self.t_total is None:
+            xi = self.params.sigma*rand.randn(self.params.n1+1,self.T)/np.sqrt(self.params.tau)
+            xi[0,:] = xi[0,:]*np.sqrt(self.params.c)
+            xi[1:,:] = xi[1:,:]*np.sqrt(1-self.params.c)
+            xi_l2 = self.params.sigma*rand.randn(self.params.n2,self.T)/np.sqrt(self.params.tau)
+        else:
+            #Select noise from precomputed noise
+            xi = self.xi[:,(self.T*(self.count)):(self.T*(self.count+1))]
+            xi_l2 = self.xi_l2[:,(self.T*(self.count)):(self.T*(self.count+1))]
+            
+        self.count += 1
+        #Simulate t seconds
+        for i in range(self.T):
+            #ut is not reset by spiking. ut is set to vt at the start of each block of deltaT
+            if deltaT is not None:
+                if i%deltaT == 0:
+                    ut = vt
+            dv = -vt/self.params.tau + np.dot(self.U,sh[:,i])
+            dv[0:self.params.n1] += np.multiply(self.W1,(self.x + xi[0,i] + xi[1:,i]))
+            dv[self.params.n1:] += np.multiply(self.W2,(xi_l2[:,i]))
+            vt = vt + self.params.dt*dv
+            ut = ut + self.params.dt*dv
+            #Find neurons that spike
+            s = vt>self.params.mu
+            #Update sh based on spiking.....
+            for s_idx in np.nonzero(s)[0]:
+                convolve_online_v2(sh, s_idx, i, self.params.kernel, 0)
+            #Save the voltages and spikes
+            h[:,i] = s.astype(int)
+            v[:,i] = vt
+            if deltaT is not None:
+                u[:,i] = ut
+            #Make spiking neurons refractory
+            r[s] = self.Tr
+            #Set the refractory neurons to v_reset
+            vt[r>0] = self.params.reset
+            vt[vt<self.params.reset] = self.params.reset
+            ut[ut<self.params.reset] = self.params.reset
+            #Decrement the refractory counters
+            r[r>0] -= 1
+
+        self.vt = vt
+        self.sh = sh
+        return (v, h, u, sh)
