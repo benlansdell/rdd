@@ -555,7 +555,7 @@ class LIF_Recurrent(object):
         self.x = 0
         #Input to each neuron in first layer weights
         self.W1 = 25*np.ones(self.params.n1)
-        self.W2 = 2*np.ones(self.params.n1)
+        self.W2 = 2*np.ones(self.params.n2)
 
         #The feedforward/recurrent connections
         self.U = np.zeros((self.params.n, self.params.n))        
@@ -588,7 +588,7 @@ class LIF_Recurrent(object):
         if not self.keepstate:
             self.vt = np.zeros(self.params.n)
             self.ut = np.zeros(self.params.n)
-            self.sh = np.zeros((self.params.n, self.T))
+        self.sh = np.zeros((self.params.n, self.T))
         vt = self.vt
         ut = self.ut
         sh = self.sh
@@ -636,5 +636,5 @@ class LIF_Recurrent(object):
             r[r>0] -= 1
 
         self.vt = vt
-        self.sh = sh
+        #self.sh = sh
         return (v, h, u, sh)
