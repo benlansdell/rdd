@@ -218,7 +218,7 @@ class LIF(object):
             #print self.T_total 
             #print self.count 
             if self.count == self.T_total:
-                print 'HI'
+                print('HI')
             self.count = self.count % int(self.T_total/self.T)
 
 
@@ -275,6 +275,91 @@ class LIF(object):
         eligibility = np.sum(np.multiply(s_input, xi_perturb), 1)
 
         return (v, h, C, betas, eligibility)
+
+    def simulate_allbutonecorrelated(self, deltaT = None):
+
+        #if deltaT is provided then in blocks of deltaT we compute the counterfactual trace... the evolution without spiking.
+        v = np.zeros((self.params.n,self.T))
+
+        if deltaT is not None:
+            u = np.zeros((self.params.n,self.T))
+        else:
+            u = None
+
+        h = np.zeros((self.params.n,self.T))
+
+        if not self.keepstate:
+            self.vt = np.zeros(self.params.n)
+            self.ut = np.zeros(self.params.n)
+
+        vt = self.vt
+        ut = self.ut
+
+        r = np.zeros(self.params.n)
+
+        #Generate new noise with each sim
+        if self.t_total is None:
+            xi = self.params.sigma*rand.randn(self.params.n+1,self.T)/np.sqrt(self.params.tau)
+            xi[0,:] = xi[0,:]*np.sqrt(self.params.c)
+            xi[1:,:] = xi[1:,:]*np.sqrt(1-self.params.c)
+            phi = self.params.sigma*rand.randn(self.T)/np.sqrt(self.params.tau)
+        else:
+            #Select noise from precomputed noise
+            xi = self.xi[:,(self.T*(self.count)):(self.T*(self.count+1))]
+            phi = self.params.sigma*rand.randn(self.T)/np.sqrt(self.params.tau)
+        #print xi.shape
+        #print self.T
+
+        self.count += 1
+
+        #Simulate t seconds
+        for i in range(self.T):
+
+            #ut is not reset by spiking. ut is set to vt at the start of each block of deltaT
+            if deltaT is not None:
+                if i%deltaT == 0:
+                    ut = vt
+
+            #print self.W.shape
+            #print xi.shape
+
+            noise = xi[0,i] + xi[1:,i]
+            noise[0] = phi[i]
+            inp = self.x + noise
+            dv = -vt/self.params.tau + np.multiply(self.W,inp)
+            #print vt.shape
+            vt = vt + self.params.dt*dv
+            ut = ut + self.params.dt*dv
+            #Find neurons that spike
+            s = vt>self.params.mu
+            #print vt.shape
+            #Save the voltages and spikes
+            h[:,i] = s.astype(int)
+            v[:,i] = vt
+
+            if deltaT is not None:
+                u[:,i] = ut
+
+            #Make spiking neurons refractory
+            r[s] = self.Tr
+            #Set the refractory neurons to v_reset
+            vt[r>0] = self.params.reset
+            vt[vt<self.params.reset] = self.params.reset
+            ut[ut<self.params.reset] = self.params.reset
+            #Decrement the refractory counters
+            r[r>0] -= 1
+
+        #Cost function per time point
+        C = (self.V[0]*h[0,:]+self.V[1]*h[1,:]-self.x**2)**2
+
+        #True causal effect for each unit
+        beta1 = self.V[0]**2 + 2*self.V[0]*self.V[1]*np.mean(h[1,:])-2*self.V[0]*self.x**2
+        beta2 = self.V[1]**2 + 2*self.V[0]*self.V[1]*np.mean(h[0,:])-2*self.V[1]*self.x**2
+        betas = [beta1, beta2]
+
+        self.vt = vt
+
+        return (v, h, C, betas, u)
 
 class LSM(LIF):
     """A class for a liquid state machine

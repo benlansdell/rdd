@@ -88,8 +88,8 @@ def causaleffect_maxv(v, Cost, deltaT, p, params):
 		blo = (vb<mu) & (vb>(mu-p))
 		C_abv = Cost[abv]
 		C_blo = Cost[blo]
-		print('Above', np.sum(abv))
-		print('Below', np.sum(blo))
+		#print('Above', np.sum(abv))
+		#print('Below', np.sum(blo))
 
 		mce[j] = np.mean(C_abv)-np.mean(C_blo)
 
