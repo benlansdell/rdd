@@ -5,7 +5,7 @@ cvals = [0.01, 0.25, 0.5, 0.75, 0.99]
 
 for c in cvals:
 
-    fn_out = './sweeps/learningbeta_counterfactual_fixedx_sweepw_banana_perturbation_c_%f.npz'%c
+    fn_out = './data/output/learningbeta_counterfactual_fixedx_sweepw_banana_perturbation_c_%f.npz'%c
 
     q = 3                   #Dimension of learnt vector
     dt = 0.001              #Simulation timestep

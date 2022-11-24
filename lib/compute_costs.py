@@ -7,7 +7,7 @@ N = 20
 nsims = 500
 c = 0.99
 
-fn_in = './sweeps/param_w_N_%d_nsims_%d_c_%f_default_simulations.npz'%(N, nsims, c)
+fn_in = './data/output/param_w_N_%d_nsims_%d_c_%f_default_simulations.npz'%(N, nsims, c)
 sims = np.load(outfile, vs = vs, hs = hs, params = params, wvals = wvals\
 	, nsims = nsims)
 
@@ -43,6 +43,6 @@ for i in range(N):
 
 
 #Save the output matrix 
-outfile = './sweeps/param_w_N_%d_nsims_%d_c_%f_default_costfuncs.npz'%(N, nsims, c)
+outfile = './data/output/param_w_N_%d_nsims_%d_c_%f_default_costfuncs.npz'%(N, nsims, c)
 np.savez(outfile, costs2 = costs2, costs3 = costs3, costs2_filters = costs2_filtered, costs3_filtered = costs3_filtered)
 

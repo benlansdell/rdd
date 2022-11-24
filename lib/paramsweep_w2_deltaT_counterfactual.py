@@ -24,7 +24,7 @@ cvals = [0.01, 0.25, 0.5, 0.75, 0.99]
 
 for c in cvals:
 	print("Running simulations for c = %f"%c)
-	outfile = './sweeps/param_w_N_%d_nsims_%d_c_%f_deltaT_counterfactual_simulations.npz'%(N, nsims, c)
+	outfile = './data/output/param_w_N_%d_nsims_%d_c_%f_deltaT_counterfactual_simulations.npz'%(N, nsims, c)
 	params.c = c
 	lif.setup(params)
 	lif.x = 0

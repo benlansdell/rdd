@@ -66,7 +66,7 @@ for eta in etas:
 	exp_filter = exp_filter/np.sum(exp_filter)
 	ds = exp_filter[0]
 	
-	fn_out = './sweeps/learningw_counterfactual_flags_%s.npz'%flags
+	fn_out = './data/output/learningw_counterfactual_flags_%s.npz'%flags
 	
 	W_rdd_trace = np.zeros((N, N, n, T, Nsims))
 	V_trace = np.zeros((N, N, n, T, Nsims))

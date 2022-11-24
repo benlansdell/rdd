@@ -28,7 +28,7 @@ for i,w0 in enumerate(wvals):
             beta_bp_w[i,j,k,:] = betas
 
 #Save output
-outfile = './sweeps/param_w_N_%d_nsims_%d_default.npz'%(N, nsims)
+outfile = './data/output/param_w_N_%d_nsims_%d_default.npz'%(N, nsims)
 np.savez(outfile, beta_rd_w=beta_rd_w, beta_fd_w=beta_fd_w, beta_bp_w=beta_bp_w, params = params, wvals = wvals\
 	, nsims = nsims, p = p)
 

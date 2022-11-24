@@ -32,7 +32,7 @@ for i,w0 in enumerate(wvals):
             hs[i,j,k,:] = h
 
 #Save output
-outfile = './sweeps/param_w_N_%d_nsims_%d_c_%f_default_simulations.npz'%(N, nsims, c)
+outfile = './data/output/param_w_N_%d_nsims_%d_c_%f_default_simulations.npz'%(N, nsims, c)
 np.savez(outfile, vs = vs, hs = hs, params = params, wvals = wvals\
 	, nsims = nsims)
 

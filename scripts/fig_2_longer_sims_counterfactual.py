@@ -8,7 +8,7 @@ import seaborn as sns
 from lib.lif import LIF, ParamsLIF
 from lib.causal import causaleffect_maxv, causaleffect_maxv_linear, causaleffect_maxv_sp
 
-fn_out = './sweeps/fig2_longer_sims_counterfactual.npz'
+fn_out = './data/output/fig2_longer_sims_counterfactual.npz'
 
 nsims = 1000
 cvals = np.array([0.01, 0.25, 0.5, 0.75, 0.99])
