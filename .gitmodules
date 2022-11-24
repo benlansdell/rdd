@@ -1,0 +1,3 @@
+[submodule "eligibility_propagation"]
+	path = eligibility_propagation
+	url = git@github.com:benlansdell/eligibility_propagation.git
