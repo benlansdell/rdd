@@ -8,4 +8,4 @@ Lansdell and Kording 2022
 
 See the text for more details.
 
-![alt text](fig1.png "Figure 1")
+![alt text](assets/fig1.png "Figure 1")
