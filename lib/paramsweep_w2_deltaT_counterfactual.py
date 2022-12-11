@@ -1,6 +1,7 @@
 import numpy as np
 from lib.lif import LIF, ParamsLIF
 from lib.causal import causaleffect
+from tqdm import tqdm
 
 #Set x = 0, sigma = 10
 #wvals = 2..20
@@ -20,7 +21,7 @@ n = params.n
 deltaT = 50
 
 #Play with different c values
-cvals = [0.01, 0.25, 0.5, 0.75, 0.99]
+cvals = [0.5]
 
 for c in cvals:
 	print("Running simulations for c = %f"%c)
@@ -32,15 +33,15 @@ for c in cvals:
 	vs = np.zeros((N, N, nsims, n, lif.T), dtype=np.float16)
 	hs = np.zeros((N, N, nsims, n, lif.T), dtype=np.bool)
 	us = np.zeros((N, N, nsims, n, lif.T), dtype=np.float16)
-	for i,w0 in enumerate(wvals):
-	    for j,w1 in enumerate(wvals):
-	        print("Running %d simulations with w0=%f, w1=%f"%(nsims, w0, w1))
-	        lif.W = np.array([w0, w1])
-	        for k in range(nsims):
-	            (v, h, Cost, betas, u) = lif.simulate(deltaT)
-	            vs[i,j,k,:] = v
-	            hs[i,j,k,:] = h
-	            us[i,j,k,:] = u
+	for i,w0 in tqdm(enumerate(wvals)):
+		for j,w1 in enumerate(wvals):
+			print("Running %d simulations with w0=%f, w1=%f"%(nsims, w0, w1))
+			lif.W = np.array([w0, w1])
+			for k in range(nsims):
+				(v, h, Cost, betas, u) = lif.simulate(deltaT)
+				vs[i,j,k,:] = v
+				hs[i,j,k,:] = h
+				us[i,j,k,:] = u
 	#Save output
 	np.savez(outfile, vs = vs, hs = hs, params = params, wvals = wvals\
 		, nsims = nsims, us = us)

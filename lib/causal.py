@@ -3,18 +3,6 @@ from sklearn import linear_model
 import copy
 import numpy.random as random
 
-#	#Load filter
-#	a = np.load(fn_filter)
-#	filter = a['filter']
-
-#def causaleffect_optimalized(v, Cost, p, params, filter):
-#	mu = params.mu;
-#	mce = np.zeros(v.shape[0])
-#	for j in range(v.shape[0]):
-#		filtered = ?
-#		mce[j] = np.mean(np.multiply(Cost, filtered))
-#	return mce
-
 def causaleffect(v, Cost, p, params):
 	mu = params.mu;
 	mce = np.zeros(v.shape[0])
@@ -36,9 +24,9 @@ def causaleffect_linear(v, Cost, p, params):
 		C_abv = Cost[abv]
 		C_blo = Cost[blo]
 		lr.fit(v[j,abv].reshape((-1,1)), C_abv) 
-		beta_abv = lr.predict(mu)
+		beta_abv = lr.predict(np.array(mu).reshape(-1, 1))
 		lr.fit(v[j,blo].reshape((-1,1)), C_blo) 
-		beta_blo = lr.predict(mu)
+		beta_blo = lr.predict(np.array(mu).reshape(-1, 1))
 		mce[j] = beta_abv-beta_blo
 	return mce
 
@@ -63,9 +51,38 @@ def causaleffect_maxv_linear(v, Cost, deltaT, p, params):
 		C_blo = Cost[blo]
 
 		lr.fit(vb[abv].reshape((-1,1)), C_abv) 
-		beta_abv = lr.predict(mu)
+		beta_abv = lr.predict(np.array(mu).reshape(-1, 1))
 		lr.fit(vb[blo].reshape((-1,1)), C_blo) 
-		beta_blo = lr.predict(mu)
+		beta_blo = lr.predict(np.array(mu).reshape(-1, 1))
+
+		mce[j] = beta_abv-beta_blo
+
+	return mce
+
+def causaleffect_maxv_linear_asymmetric(v, Cost, deltaT, p, params):
+	#Split into blocks of DeltaT (provided in units of seconds)
+	cost_r = Cost.reshape((-1, deltaT))
+	Cost = np.squeeze(cost_r[:,-1])
+
+	mu = params.mu;
+	mce = np.zeros(v.shape[0])
+
+	lr = linear_model.LinearRegression()
+
+	for j in range(v.shape[0]):
+		#Take max voltage in each block
+		v_r = v[j,:].reshape((-1, deltaT))
+		vb = np.max(v_r, 1)
+
+		abv = (vb>mu)
+		blo = (vb<mu) & (vb>(mu-p))
+		C_abv = Cost[abv]
+		C_blo = Cost[blo]
+
+		lr.fit(vb[abv].reshape((-1,1)), C_abv) 
+		beta_abv = lr.predict(np.array(mu).reshape(-1, 1))
+		lr.fit(vb[blo].reshape((-1,1)), C_blo) 
+		beta_blo = lr.predict(np.array(mu).reshape(-1, 1))
 
 		mce[j] = beta_abv-beta_blo
 
@@ -95,6 +112,33 @@ def causaleffect_maxv(v, Cost, deltaT, p, params):
 
 	return mce
 
+
+def causaleffect_maxv_asymmetric(v, Cost, deltaT, p, params):
+	"""Only apply p window threshold to sub-treshold inputs. Include all inputs *above* the threshold
+	
+	This is asymmetric, but more realistic."""
+	cost_r = Cost.reshape((-1, deltaT))
+	Cost = np.squeeze(cost_r[:,-1])
+
+	mu = params.mu;
+	mce = np.zeros(v.shape[0])
+
+	for j in range(v.shape[0]):
+		#Take max voltage in each block
+		v_r = v[j,:].reshape((-1, deltaT))
+		vb = np.max(v_r, 1)
+
+		abv = (vb>mu)
+		blo = (vb<mu) & (vb>(mu-p))
+		C_abv = Cost[abv]
+		C_blo = Cost[blo]
+		#print('Above', np.sum(abv))
+		#print('Below', np.sum(blo))
+
+		mce[j] = np.mean(C_abv)-np.mean(C_blo)
+
+	return mce
+
 def causaleffect_maxv_sp(v, h, cost, deltaT, params, exp_filter):
 		ace_sp = np.zeros(params.n)
 		p = copy.copy(params)
@@ -110,7 +154,7 @@ def causaleffect_maxv_sp(v, h, cost, deltaT, params, exp_filter):
 			vp = v.copy()
 
 			#Perturb vi and hi
-			nB = h.shape[1]/deltaT
+			nB = h.shape[1]//deltaT
 			sp = random.rand(nB) < 0.5
 			vi = 1.1*(sp == True)[None, :]
 			hi = np.zeros((nB, deltaT))
